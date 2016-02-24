@@ -37,6 +37,7 @@ describe('Logstash Logger', function() {
 
 				expect(parsedData).to.eql({
 					type: 'test_type',
+					level: 'INFO',
 					message: 'TEST MESSAGE'
 				});
 
@@ -183,6 +184,32 @@ describe('Logstash Logger', function() {
 
 				expect(parsedData).to.eql({
 					type: 'test_type_errors',
+					message: 'TEST MESSAGE'
+				});
+
+				done();
+			});
+
+			logger('ERROR', undefined, 'TEST MESSAGE');
+		});
+
+		it('sets level property when type is string literal', function(done) {
+			var logger = new logstashLogger({
+				output: {
+					transport: 'udp',
+					host: '127.0.0.1',
+					port: 9990
+				},
+				eventType: 'mytype'
+			});
+
+			udpClient.on("message", function messageReceived(msg) {
+				var data = msg.toString('utf-8');
+				var parsedData = JSON.parse(data);
+
+				expect(parsedData).to.eql({
+					type: 'mytype',
+					level: 'ERROR',
 					message: 'TEST MESSAGE'
 				});
 

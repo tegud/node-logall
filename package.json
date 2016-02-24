@@ -1,6 +1,6 @@
 {
   "name": "logall",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Log all the things",
   "main": "lib/index.js",
   "scripts": {

@@ -1,7 +1,16 @@
 var moment = require('moment');
 var _ = require('lodash');
-var net = require('net');
-var moment = require('moment');
+var promise = require('bluebird');
+
+function setLevel(config, level, baseObject) {
+	if(typeof config !== 'string') {
+		return baseObject;
+	}
+
+	baseObject.level = level;
+
+	return baseObject;
+}
 
 function getLogstashType(config, level) {
 	if(typeof config === 'string') {
@@ -39,29 +48,31 @@ function mapConflictingDataProperties(data, baseObject) {
 }
 
 function buildMessage(getType, codec, level, module, message, data) {
-	if(codec === 'oldlogstashjson') {
-		if(!data) {
-			data = {};
+	return new Promise(function(resolve) {
+		if(codec === 'oldlogstashjson') {
+			if(!data) {
+				data = {};
+			}
+
+			data.module = module;
+
+			return resolve({
+				'@timestamp': moment().format(),
+				'@type': getType(level),
+				'@message': message,
+				'@fields': data
+			});
 		}
 
-		data.module = module;
-
-		return {
+		var baseObject = {
 			'@timestamp': moment().format(),
-			'@type': getType(level),
-			'@message': message,
-			'@fields': data
+			type: getType(level),
+			module: module,
+			message: message
 		};
-	}
 
-	var baseObject = {
-		'@timestamp': moment().format(),
-		type: getType(level),
-		module: module,
-		message: message
-	};
-
-	return _.merge({}, mapConflictingDataProperties(data, baseObject), baseObject);
+		resolve(_.merge({}, mapConflictingDataProperties(data, baseObject), baseObject));
+	});
 }
 
 module.exports = function LogstashLogger(config) {
@@ -70,8 +81,8 @@ module.exports = function LogstashLogger(config) {
 	var buildMessageWithGetType = buildMessage.bind(undefined, getType, config.codec);
 	
 	return function(level, module, message, data) {
-		var message = buildMessageWithGetType(level, module, message, data);
-
-		send(message);
+		var message = buildMessageWithGetType(level, module, message, data)
+			.then(setLevel.bind(undefined, config.eventType, level))
+			.then(send);
 	};
 }
