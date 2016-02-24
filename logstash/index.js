@@ -1,6 +1,6 @@
 var moment = require('moment');
 var _ = require('lodash');
-var promise = require('bluebird');
+var Promise = require('bluebird');
 
 function setLevel(config, level, baseObject) {
 	if(typeof config !== 'string') {
