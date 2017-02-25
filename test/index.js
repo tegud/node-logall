@@ -1,142 +1,136 @@
-var expect = require('expect.js');
+var should = require('should');
 var proxyquire = require('proxyquire');
 var logging = proxyquire('../index', {
-	'./console': FakeLogger
-}); 
+	'./lib/console': FakeLogger
+});
 var _ = require('lodash');
 var moment = require('moment');
 
 var loggedItems = [];
 
 function FakeLogger() {
-	return function (level, module, message, data) {
-		loggedItems.push({
-			level: level,
-			module: module, 
-			message: message,
-			data: data
-		});
-	}
+	return log => loggedItems.push(log)
 }
 
-describe('logall', function() {
-	beforeEach(function() {
+describe('logall', () => {
+	beforeEach(() => {
 		loggedItems = [];
 		logging.removeAll();
 	});
 
-	describe('externally defined logging module', function() {
-		it('matching log level is logged', function() {
-			logging.registerLogger({ level: 'INFO' }, FakeLogger);
+	function registerLogger(...args) {
+		logging.registerLogger(...args);
 
-			logging.log('INFO', undefined, 'TEST MESSAGE');
+		return Promise.resolve();
+	}
 
-			expect(loggedItems[0].message).to.be('TEST MESSAGE');
-		});
+	function forModule(module) {
+		return Promise.resolve(logging.forModule(module));
+	}
 
-		it('lower log level is not logged', function() {
-			logging.registerLogger({ level: 'INFO' }, FakeLogger);
+	function setLogLevel(...args) {
+		logging.setLoggerLevel(...args);
 
-			logging.log('DEBUG', undefined, 'TEST MESSAGE');
+		return Promise.resolve();
+	}
 
-			expect(loggedItems.length).to.be(0);
-		});
+	function registerMiddleware(middleware) {
+		logging.registerMiddleware(middleware);
 
-		it('higher log level is logged', function() {
-			logging.registerLogger({ level: 'INFO' }, FakeLogger);
+		return Promise.resolve();
+	}
 
-			logging.log('ERROR', undefined, 'TEST MESSAGE');
+	describe('externally defined logging module', () => {
+		it('matching log level is logged', () => registerLogger({ level: 'INFO' }, FakeLogger)
+			.then(() => logging.log('INFO', undefined, 'TEST MESSAGE'))
+			.then(() => Promise.resolve(loggedItems[0].message))
+			.should.eventually.eql('TEST MESSAGE'));
 
-			expect(loggedItems[0].message).to.be('TEST MESSAGE');
-		});
+		it('lower log level is not logged', () => registerLogger({ level: 'INFO' }, FakeLogger)
+			.then(() => logging.log('DEBUG', undefined, 'TEST MESSAGE'))
+			.then(() => Promise.resolve(loggedItems.length))
+			.should.eventually.eql(0));
 
-		it('logs info', function() {
-			logging.registerLogger({ level: 'INFO', type: 'console' });
+		it('higher log level is logged', () => registerLogger({ level: 'INFO' }, FakeLogger)
+			.then(() => logging.log('ERROR', undefined, 'TEST MESSAGE'))
+			.then(() => Promise.resolve(loggedItems[0].message))
+			.should.eventually.eql('TEST MESSAGE'));
 
-			logging.logInfo('TEST MESSAGE');
+		it('logs info', () => registerLogger({ level: 'INFO' }, FakeLogger)
+			.then(() => logging.logInfo('TEST MESSAGE'))
+			.then(() => Promise.resolve(loggedItems[0].level))
+			.should.eventually.eql('INFO'));
 
-			expect(loggedItems[0].level).to.be('INFO');
-		});
+		it('logs debug', () => registerLogger({ level: 'DEBUG' }, FakeLogger)
+			.then(() => logging.logDebug('TEST MESSAGE'))
+			.then(() => Promise.resolve(loggedItems[0].level))
+			.should.eventually.eql('DEBUG'));
 
-		it('logs debug', function() {
-			logging.registerLogger({ level: 'DEBUG', type: 'console' });
-
-			logging.logDebug('TEST MESSAGE');
-
-			expect(loggedItems[0].level).to.be('DEBUG');
-		});
-
-		it('logs error', function() {
-			logging.registerLogger({ level: 'ERROR', type: 'console' });
-
-			logging.logError('TEST MESSAGE');
-
-			expect(loggedItems[0].level).to.be('ERROR');
-		});
+		it('logs error', () => registerLogger({ level: 'INFO' }, FakeLogger)
+			.then(() => logging.logError('TEST MESSAGE'))
+			.then(() => Promise.resolve(loggedItems[0].level))
+			.should.eventually.eql('ERROR'));
 	});
 
-	describe('built in logging module', function() {
-		it('matching log level is logged', function() {
-			logging.registerLogger({ level: 'INFO', type: 'console' });
-
-			logging.log('INFO', undefined, 'TEST MESSAGE');
-
-			expect(loggedItems[0].message).to.be('TEST MESSAGE');
-		});
+	describe('built in logging module', () => {
+		it('matching log level is logged', () => registerLogger({ level: 'INFO', type: 'console' })
+			.then(() => logging.log('INFO', undefined, 'TEST MESSAGE'))
+			.then(() => Promise.resolve(loggedItems[0].message))
+			.should.eventually.eql('TEST MESSAGE'));
 	});
 
-	describe('forModule', function() {
-		it('sets module name', function() {
-			logging.registerLogger({ level: 'INFO', type: 'console' });
+	describe('forModule', () => {
+		it('sets module name', () => registerLogger({ level: 'INFO', type: 'console' })
+			.then(() => forModule('TEST MODULE'))
+			.then(logging => logging.logInfo('TEST MESSAGE'))
+			.then(() => Promise.resolve(loggedItems[0].module))
+			.should.eventually.eql('TEST MODULE'));
 
-			logging.forModule('TEST MODULE').logInfo('TEST MESSAGE');
+		it('logs info', () => registerLogger({ level: 'DEBUG', type: 'console' })
+			.then(() => forModule('TEST MODULE'))
+			.then(logging => logging.logInfo('TEST MESSAGE'))
+			.then(() => Promise.resolve(loggedItems[0].level))
+			.should.eventually.eql('INFO'));
 
-			expect(loggedItems[0].module).to.be('TEST MODULE');
-		});
+		it('logs debug', () => registerLogger({ level: 'DEBUG', type: 'console' })
+			.then(() => forModule('TEST MODULE'))
+			.then(logging => logging.logDebug('TEST MESSAGE'))
+			.then(() => Promise.resolve(loggedItems[0].level))
+			.should.eventually.eql('DEBUG'));
 
-		it('logs info', function() {
-			logging.registerLogger({ level: 'INFO', type: 'console' });
-
-			logging.forModule('TEST MODULE').logInfo('TEST MESSAGE');
-
-			expect(loggedItems[0].level).to.be('INFO');
-		});
-
-		it('logs debug', function() {
-			logging.registerLogger({ level: 'DEBUG', type: 'console' });
-
-			logging.forModule('TEST MODULE').logDebug('TEST MESSAGE');
-
-			expect(loggedItems[0].level).to.be('DEBUG');
-		});
-
-		it('logs error', function() {
-			logging.registerLogger({ level: 'ERROR', type: 'console' });
-
-			logging.forModule('TEST MODULE').logError('TEST MESSAGE');
-
-			expect(loggedItems[0].level).to.be('ERROR');
-		});
+		it('logs error', () => registerLogger({ level: 'DEBUG', type: 'console' })
+			.then(() => forModule('TEST MODULE'))
+			.then(logging => logging.logError('TEST MESSAGE'))
+			.then(() => Promise.resolve(loggedItems[0].level))
+			.should.eventually.eql('ERROR'));
 	});
 
-	describe('setLoggerLevel', function() {
-		it('modifies the specified logger\'s level', function() {
-			logging.registerLogger({ level: 'INFO', type: 'console', name: 'default' });
-			logging.setLoggerLevel('default', 'DEBUG');
-
-			logging.log('DEBUG', undefined, 'TEST MESSAGE');
-
-			expect(loggedItems[0].message).to.be('TEST MESSAGE');
-		});
+	describe('setLoggerLevel', () => {
+		it('modifies the specified logger\'s level', () => registerLogger({ level: 'INFO', type: 'console', name: 'default' })
+			.then(() => setLogLevel('default', 'DEBUG'))
+			.then(() => logging.log('DEBUG', undefined, 'TEST MESSAGE'))
+			.then(() => Promise.resolve(loggedItems[0].message))
+			.should.eventually.eql('TEST MESSAGE'));
 	});
 
-	describe('log sets data', function() {
-		it('modifies the specified logger\'s level', function() {
-			logging.registerLogger({ level: 'INFO', type: 'console', name: 'default' });
+	it('log sets data', () => registerLogger({ level: 'INFO', type: 'console', name: 'default' })
+		.then(() => logging.log('INFO', undefined, 'TEST MESSAGE', { a: 1 }))
+		.then(() => Promise.resolve(loggedItems[0].data))
+		.should.eventually.eql({ a: 1 }));
 
-			logging.log('INFO', undefined, 'TEST MESSAGE', { a: 1 });
+	describe('registerMiddleware', () => {
+		it('executes specified middleware when logging', () => registerLogger({ level: 'INFO', type: 'console' })
+			.then(() => registerMiddleware((log, next) => {
+				if(!log.data) {
+					log.data = {};
+				}
 
-			expect(loggedItems[0].data).to.eql({ a: 1 });
-		});
+				log.data.x = 1;
+
+				next();
+			}))
+			.then(() => logging.log('INFO', undefined, 'TEST MESSAGE', { a: 1 }))
+			.then(() => Promise.resolve(loggedItems[0].data.x))
+			.should.eventually.eql(1));
 	});
 });

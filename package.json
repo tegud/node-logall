@@ -1,25 +1,22 @@
 {
   "name": "logall",
-  "version": "0.0.3",
+  "version": "1.0.0",
   "description": "Log all the things",
   "main": "lib/index.js",
   "scripts": {
-    "test": "grunt"
+    "test": "npm run lint && npm run mocha",
+    "lint": "node_modules/.bin/eslint index.js lib/**/*.js",
+    "mocha": "node_modules/.bin/mocha --timeout 3000 ./test/**/*.js"
   },
   "author": "Steve Elliott",
   "license": "ISC",
   "devDependencies": {
-    "grunt": "^0.4.4",
-    "grunt-contrib-jshint": "~0.4.3",
-    "mocha": "~1.12.1",
-    "grunt-mocha-cli": "~1.7.0",
-    "load-grunt-tasks": "~0.4.0",
-    "jshint-stylish": "~0.1.5",
-    "expect.js": "~0.3.1",
-    "proxyquire": "^0.6.0"
+    "eslint": "^3.16.1",
+    "mocha": "^3.2.0",
+    "proxyquire": "^0.6.0",
+    "should": "^11.1.2"
   },
   "dependencies": {
-    "bluebird": "^2.1.2",
     "lodash": "^3.9.3",
     "moment": "^2.6.0"
   }

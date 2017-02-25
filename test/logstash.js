@@ -1,23 +1,23 @@
-var expect = require('expect.js');
+var should = require('should');
 var proxyquire = require('proxyquire');
 var dgram = require('dgram');
 var net = require('net');
-var logstashLogger = proxyquire('../logstash', {
-	'moment': function() {
+var logstashLogger = proxyquire('../lib/logstash', {
+	'moment': () => {
 		return {
-			format: function() {
+			format: () => {
 				return formattedDateTime;
 			}
 		};
 	}
-}); 
+});
 var _ = require('lodash');
 var moment = require('moment');
 var formattedDateTime;
 
-describe('Logstash Logger', function() {
-	describe('logs to udp', function() {
-		it('formatted event is sent', function(done) {
+describe('Logstash Logger', () => {
+	describe('logs to udp', () => {
+		it('formatted event is sent', done => {
 			var logger = new logstashLogger({
 				output: {
 					transport: 'udp',
@@ -35,7 +35,7 @@ describe('Logstash Logger', function() {
 				var data = msg.toString('utf-8');
 				var parsedData = JSON.parse(data);
 
-				expect(parsedData).to.eql({
+				parsedData.should.eql({
 					type: 'test_type',
 					level: 'INFO',
 					message: 'TEST MESSAGE'
@@ -46,12 +46,12 @@ describe('Logstash Logger', function() {
 				done();
 			});
 
-			logger('INFO', undefined, 'TEST MESSAGE');
+			logger({ level: 'INFO', message: 'TEST MESSAGE' });
 		});
 	});
 
-	describe.skip('logs to tcp', function() {
-		it('formatted event is sent', function(done) {
+	describe.skip('logs to tcp', () => {
+		it('formatted event is sent', done => {
 			var logger = new logstashLogger({
 				output: {
 					transport: 'tcp',
@@ -69,7 +69,7 @@ describe('Logstash Logger', function() {
 					var data = msg.toString('utf-8');
 					var parsedData = JSON.parse(data);
 
-					expect(parsedData).to.eql({
+					parsedData.should.eql({
 						type: 'test_type',
 						message: 'TEST MESSAGE'
 					});
@@ -84,39 +84,39 @@ describe('Logstash Logger', function() {
 				console.log('ERROR!!! ' + e.code);
 			});
 
-			server.listen(9991, '0.0.0.0', function() {
+			server.listen(9991, '0.0.0.0', () => {
 				console.log('listening...');
 			});
 
-			setTimeout(function() {
+			setTimeout(() => {
 				console.log('Sending...');
 				logger('INFO', undefined, 'TEST MESSAGE');
 			}, 1000)
 		});
 	});
 
-	describe('type can be defined by level', function() {
+	describe('type can be defined by level', () => {
 		var udpClient;
 
-		beforeEach(function() {
+		beforeEach(() => {
 			udpClient = dgram.createSocket("udp4");
 
 			udpClient.bind(9990);
 		});
 
-		afterEach(function() {
+		afterEach(() => {
 			udpClient.close();
 		});
 
-		it('type prefix is prepended to lower case level', function(done) {
+		it('type prefix is prepended to lower case level', done => {
 			var logger = new logstashLogger({
 				output: {
 					transport: 'udp',
 					host: '127.0.0.1',
 					port: 9990
 				},
-				eventType: { 
-					prefix: 'test_type_' 
+				eventType: {
+					prefix: 'test_type_'
 				}
 			});
 
@@ -124,7 +124,7 @@ describe('Logstash Logger', function() {
 				var data = msg.toString('utf-8');
 				var parsedData = JSON.parse(data);
 
-				expect(parsedData).to.eql({
+				parsedData.should.eql({
 					type: 'test_type_info',
 					message: 'TEST MESSAGE'
 				});
@@ -133,18 +133,18 @@ describe('Logstash Logger', function() {
 				done();
 			});
 
-			logger('INFO', undefined, 'TEST MESSAGE');
+			logger({ level: 'INFO', message: 'TEST MESSAGE' });
 		});
 
-		it('sets level', function(done) {
+		it('sets level', done => {
 			var logger = new logstashLogger({
 				output: {
 					transport: 'udp',
 					host: '127.0.0.1',
 					port: 9990
 				},
-				eventType: { 
-					prefix: 'test_type_' 
+				eventType: {
+					prefix: 'test_type_'
 				}
 			});
 
@@ -152,7 +152,7 @@ describe('Logstash Logger', function() {
 				var data = msg.toString('utf-8');
 				var parsedData = JSON.parse(data);
 
-				expect(parsedData).to.eql({
+				parsedData.should.eql({
 					type: 'test_type_error',
 					message: 'TEST MESSAGE'
 				});
@@ -160,17 +160,17 @@ describe('Logstash Logger', function() {
 				done();
 			});
 
-			logger('ERROR', undefined, 'TEST MESSAGE');
+			logger({ level: 'ERROR', message: 'TEST MESSAGE' });
 		});
 
-		it('sets level specific override', function(done) {
+		it('sets level specific override', done => {
 			var logger = new logstashLogger({
 				output: {
 					transport: 'udp',
 					host: '127.0.0.1',
 					port: 9990
 				},
-				eventType: { 
+				eventType: {
 					prefix: 'test_type_',
 					overrides: {
 						'error': 'errors'
@@ -182,7 +182,7 @@ describe('Logstash Logger', function() {
 				var data = msg.toString('utf-8');
 				var parsedData = JSON.parse(data);
 
-				expect(parsedData).to.eql({
+				parsedData.should.eql({
 					type: 'test_type_errors',
 					message: 'TEST MESSAGE'
 				});
@@ -190,10 +190,10 @@ describe('Logstash Logger', function() {
 				done();
 			});
 
-			logger('ERROR', undefined, 'TEST MESSAGE');
+			logger({ level: 'ERROR', message: 'TEST MESSAGE' });
 		});
 
-		it('sets level property when type is string literal', function(done) {
+		it('sets level property when type is string literal', done => {
 			var logger = new logstashLogger({
 				output: {
 					transport: 'udp',
@@ -207,7 +207,7 @@ describe('Logstash Logger', function() {
 				var data = msg.toString('utf-8');
 				var parsedData = JSON.parse(data);
 
-				expect(parsedData).to.eql({
+				parsedData.should.eql({
 					type: 'mytype',
 					level: 'ERROR',
 					message: 'TEST MESSAGE'
@@ -216,15 +216,15 @@ describe('Logstash Logger', function() {
 				done();
 			});
 
-			logger('ERROR', undefined, 'TEST MESSAGE');
+			logger({ level: 'ERROR', message: 'TEST MESSAGE' });
 		});
 	});
 
-	describe('json codec', function() {
+	describe('json codec', () => {
 		var udpClient;
 		var logger;
 
-		beforeEach(function() {
+		beforeEach(() => {
 			udpClient = dgram.createSocket("udp4");
 
 			udpClient.bind(9990);
@@ -241,7 +241,7 @@ describe('Logstash Logger', function() {
 			formattedDateTime = '';
 		});
 
-		afterEach(function() {
+		afterEach(() => {
 			udpClient.close();
 		});
 
@@ -254,90 +254,90 @@ describe('Logstash Logger', function() {
 			done();
 		}
 
-		it('sets type', function(done) {
-			udpClient.on("message", handleMessage.bind(undefined, done, function(parsedData) {	
-				expect(parsedData.type).to.be('test_type');
+		it('sets type', done => {
+			udpClient.on("message", handleMessage.bind(undefined, done, function(parsedData) {
+				parsedData.type.should.eql('test_type');
 			}));
 
-			logger('ERROR', undefined, 'TEST MESSAGE');
+			logger({ level: 'ERROR', module: 'TEST MESSAGE' });
 		});
 
-		it('sets @timestamp', function(done) {
+		it('sets @timestamp', done => {
 			formattedDateTime = '2015-07-02T19:06:56.078Z';
 
-			udpClient.on("message", handleMessage.bind(undefined, done, function(parsedData) {	
-				expect(parsedData['@timestamp']).to.eql('2015-07-02T19:06:56.078Z');
+			udpClient.on("message", handleMessage.bind(undefined, done, function(parsedData) {
+				parsedData['@timestamp'].should.eql('2015-07-02T19:06:56.078Z');
 			}));
 
-			logger('ERROR', undefined, 'TEST MESSAGE');
+			logger({ level: 'ERROR', message: 'TEST MESSAGE' });
 		});
 
-		it('sets message', function(done) {
-			udpClient.on("message", handleMessage.bind(undefined, done, function(parsedData) {	
-				expect(parsedData.message).to.eql('TEST MESSAGE');
+		it('sets message', done => {
+			udpClient.on("message", handleMessage.bind(undefined, done, function(parsedData) {
+				parsedData.message.should.eql('TEST MESSAGE');
 			}));
 
-			logger('ERROR', undefined, 'TEST MESSAGE');
+			logger({ level: 'ERROR', message: 'TEST MESSAGE' });
 		});
 
-		it('sets module', function(done) {
-			udpClient.on("message", handleMessage.bind(undefined, done, function(parsedData) {	
-				expect(parsedData.module).to.eql('TEST MODULE');
+		it('sets module', done => {
+			udpClient.on("message", handleMessage.bind(undefined, done, function(parsedData) {
+				parsedData.module.should.eql('TEST MODULE');
 			}));
 
-			logger('ERROR', 'TEST MODULE', 'TEST MESSAGE');
+			logger({ level: 'ERROR', module: 'TEST MODULE', message: 'TEST MESSAGE' });
 		});
 
-		it('sets additionalProperties', function(done) {
-			udpClient.on("message", handleMessage.bind(undefined, done, function(parsedData) {	
-				expect(parsedData.a).to.eql(1);
+		it('sets additionalProperties', done => {
+			udpClient.on("message", handleMessage.bind(undefined, done, function(parsedData) {
+				parsedData.a.should.eql(1);
 			}));
 
-			logger('ERROR', undefined, 'TEST MESSAGE', { a: 1 });
+			logger({ level: 'ERROR', message: 'TEST MESSAGE', data: { a: 1 } });
 		});
 
-		describe('sets additionalProperties with keywords', function() {
-			it('does not overwrite message', function(done) {
-				udpClient.on("message", handleMessage.bind(undefined, done, function(parsedData) {	
-					expect(parsedData.message).to.eql('TEST MESSAGE');
+		describe('sets additionalProperties with keywords', () => {
+			it('does not overwrite message', done => {
+				udpClient.on("message", handleMessage.bind(undefined, done, function(parsedData) {
+					parsedData.message.should.eql('TEST MESSAGE');
 				}));
 
-				logger('ERROR', undefined, 'TEST MESSAGE', { message: '1' });
+				logger({ level: 'ERROR', message: 'TEST MESSAGE', data: { message: '1' } });
 			});
 
-			it('sets message as additionalMessage', function(done) {
-				udpClient.on("message", handleMessage.bind(undefined, done, function(parsedData) {	
-					expect(parsedData.additionalMessage).to.eql(1);
+			it('sets message as additionalMessage', done => {
+				udpClient.on("message", handleMessage.bind(undefined, done, function(parsedData) {
+					parsedData.additionalMessage.should.eql(1);
 				}));
 
-				logger('ERROR', undefined, 'TEST MESSAGE', { message: 1 });
+				logger({ level: 'ERROR', message: 'TEST MESSAGE', data: { message: 1 } });
 			});
 
-			it('does not overwrite @timestamp', function(done) {
+			it('does not overwrite @timestamp', done => {
 				formattedDateTime = '2015-07-02T19:06:56.078Z';
 
-				udpClient.on("message", handleMessage.bind(undefined, done, function(parsedData) {	
-					expect(parsedData['@timestamp']).to.eql('2015-07-02T19:06:56.078Z');
+				udpClient.on("message", handleMessage.bind(undefined, done, function(parsedData) {
+					parsedData['@timestamp'].should.eql('2015-07-02T19:06:56.078Z');
 				}));
 
-				logger('ERROR', undefined, 'TEST MESSAGE', { '@timestamp': '1' });
+				logger({ level: 'ERROR', message: 'TEST MESSAGE', data: { '@timestamp': '1' } });
 			});
 
-			it('sets message as additionalTimestamp', function(done) {
-				udpClient.on("message", handleMessage.bind(undefined, done, function(parsedData) {	
-					expect(parsedData.additionalTimestamp).to.eql(1);
+			it('sets message as additionalTimestamp', done => {
+				udpClient.on("message", handleMessage.bind(undefined, done, function(parsedData) {
+					parsedData.additionalTimestamp.should.eql(1);
 				}));
 
-				logger('ERROR', undefined, 'TEST MESSAGE', { '@timestamp': 1 });
+				logger({ level: 'ERROR', message: 'TEST MESSAGE', data: { '@timestamp': 1 } });
 			});
 		});
 	});
 
-	describe('old logstash json codec', function() {
+	describe('old logstash json codec', () => {
 		var udpClient;
 		var logger;
 
-		beforeEach(function() {
+		beforeEach(() => {
 			udpClient = dgram.createSocket("udp4");
 
 			udpClient.bind(9990);
@@ -355,7 +355,7 @@ describe('Logstash Logger', function() {
 			formattedDateTime = '';
 		});
 
-		afterEach(function() {
+		afterEach(() => {
 			udpClient.close();
 		});
 
@@ -368,38 +368,38 @@ describe('Logstash Logger', function() {
 			done();
 		}
 
-		it('sets type', function(done) {
-			udpClient.on("message", handleMessage.bind(undefined, done, function(parsedData) {	
-				expect(parsedData['@type']).to.be('test_type');
+		it('sets type', done => {
+			udpClient.on("message", handleMessage.bind(undefined, done, function(parsedData) {
+				parsedData['@type'].should.eql('test_type');
 			}));
 
-			logger('ERROR', undefined, 'TEST MESSAGE');
+			logger({ level: 'ERROR', message: 'TEST MESSAGE' });
 		});
 
-		it('sets @timestamp', function(done) {
+		it('sets @timestamp', done => {
 			formattedDateTime = '2015-07-02T19:06:56.078Z';
 
-			udpClient.on("message", handleMessage.bind(undefined, done, function(parsedData) {	
-				expect(parsedData['@timestamp']).to.eql('2015-07-02T19:06:56.078Z');
+			udpClient.on("message", handleMessage.bind(undefined, done, function(parsedData) {
+				parsedData['@timestamp'].should.eql('2015-07-02T19:06:56.078Z');
 			}));
 
-			logger('ERROR', undefined, 'TEST MESSAGE');
+			logger({ level: 'ERROR', message: 'TEST MESSAGE' });
 		});
 
-		it('sets message', function(done) {
-			udpClient.on("message", handleMessage.bind(undefined, done, function(parsedData) {	
-				expect(parsedData['@message']).to.eql('TEST MESSAGE');
+		it('sets message', done => {
+			udpClient.on("message", handleMessage.bind(undefined, done, function(parsedData) {
+				parsedData['@message'].should.eql('TEST MESSAGE');
 			}));
 
-			logger('ERROR', undefined, 'TEST MESSAGE');
+			logger({ level: 'ERROR', message: 'TEST MESSAGE' });
 		});
 
-		it('sets additionalProperties', function(done) {
-			udpClient.on("message", handleMessage.bind(undefined, done, function(parsedData) {	
-				expect(parsedData['@fields'].a).to.eql(1);
+		it('sets additionalProperties', done => {
+			udpClient.on("message", handleMessage.bind(undefined, done, function(parsedData) {
+				parsedData['@fields'].a.should.eql(1);
 			}));
 
-			logger('ERROR', undefined, 'TEST MESSAGE', { a: 1 });
+			logger({ level: 'ERROR', message: 'TEST MESSAGE', data: { a: 1 } });
 		});
 	});
 });
