@@ -59,13 +59,17 @@ Log messages should be consistent, and allow you to find where in the code they 
 
 e.g. 
 
-*Dont do:*
+**Dont do:**
 
+~~~~
 logging.logError(`Error calling ${host} for the latest news, try: ${retries}`);
+~~~~
 
-*Do:*
+**Do:**
 
+~~~~
 logging.logError('Error getting latest news', { host: host, tries: retries });
+~~~~
 
 This becomes particulary powerful when storing in a full-text search datastore such as Elasticsearch.
 
