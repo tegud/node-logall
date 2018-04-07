@@ -1,8 +1,6 @@
-const _ = require('lodash');
-
-const DEBUG = 'DEBUG';
-const INFO = 'INFO';
-const ERROR = 'ERROR';
+const DEBUG = "DEBUG";
+const INFO = "INFO";
+const ERROR = "ERROR";
 
 const availableLevels = {};
 
@@ -10,12 +8,14 @@ availableLevels[DEBUG] = 0;
 availableLevels[INFO] = 1;
 availableLevels[ERROR] = 2;
 
-let loggers = [CreateLogger({
-    name: 'default',
-    type: 'console',
-    level: INFO
-})];
-let middlewares = [];
+let loggers = [
+    CreateLogger({
+        name: "default",
+        type: "console",
+        level: INFO
+    })
+];
+let formatters = [];
 
 function CreateLogger(config) {
     if (!config.logger) {
@@ -29,15 +29,17 @@ function CreateLogger(config) {
     };
 }
 
-function processMiddlewares(middlewares, logObject) {
-    if (!middlewares.length) {
+function processFormatters(formatters, logObject) {
+    if (!formatters.length) {
         return Promise.resolve(logObject);
     }
 
-    const middleware = middlewares.shift();
+    const formatter = formatters.shift();
 
-    return ((() => new Promise(resolve => middleware(logObject, () => resolve())))())
-        .then(() => processMiddlewares(middlewares, logObject));
+    return (() =>
+        new Promise(resolve => formatter(logObject, () => resolve())))().then(
+        () => processFormatters(formatters, logObject)
+    );
 }
 
 function buildLogObject(level, module, message, data) {
@@ -48,25 +50,37 @@ function buildLogObject(level, module, message, data) {
         data: data
     };
 
-    return processMiddlewares([...middlewares], logObject)
-        .then(() => Promise.resolve(logObject));
+    return processFormatters([...formatters], logObject).then(() =>
+        Promise.resolve(logObject)
+    );
+}
+
+function getLoggerLevel(currentLogger, logObject) {
+    if (typeof currentLogger.level === "function") {
+        return currentLogger.level(logObject);
+    }
+    return currentLogger.level;
 }
 
 function log(level, module, message, data) {
-    return buildLogObject(level, module, message, data)
-        .then(logObject => {
-            _.chain(loggers)
-                .filter(currentLogger => availableLevels[level] >= availableLevels[currentLogger.level])
-                .invoke('logger', logObject)
-                .value();
+    return buildLogObject(level, module, message, data).then(logObject => {
+        loggers
+            .filter(
+                currentLogger =>
+                    availableLevels[level] >=
+                    availableLevels[getLoggerLevel(currentLogger, logObject)]
+            )
+            .forEach(currentLogger => currentLogger.logger(logObject));
 
-            return Promise.resolve();
-        });
+        return Promise.resolve();
+    });
 }
 
 function buildLogger(module) {
-    return _.reduce(availableLevels, (allLoggers, priority, level) => {
-        allLoggers[`log${level.substring(0, 1)}${level.substring(1).toLowerCase()}`] = log.bind(undefined, level, module);
+    return Object.keys(availableLevels).reduce((allLoggers, level) => {
+        allLoggers[
+            `log${level.substring(0, 1)}${level.substring(1).toLowerCase()}`
+        ] = log.bind(undefined, level, module);
 
         return allLoggers;
     }, {});
@@ -81,26 +95,30 @@ function registerLogger(config, logger) {
 }
 
 function setLoggerLevel(logger, level) {
-    const matchedLogger = _.chain(loggers).filter((currentLogger) => currentLogger.name === logger).first().value();
+    const matchedLoggers = loggers.filter(
+        currentLogger => currentLogger.name === logger
+    );
 
-    if (!matchedLogger) {
+    if (!matchedLoggers.length) {
         return;
     }
 
-    matchedLogger.level = level;
+    matchedLoggers[0].level = level;
 }
 
 function removeAll() {
     loggers = [];
-    middlewares = [];
+    formatters = [];
 }
 
-module.exports = _.merge({
-    registerLogger: registerLogger,
-    registerMiddleware: handler => middlewares.push(handler),
-    removeAll: removeAll,
-    setLoggerLevel: setLoggerLevel,
-    log: log,
-    forModule: buildLogger
-},
-    buildLogger());
+module.exports = Object.assign(
+    {
+        registerLogger: registerLogger,
+        registerFormatter: handler => formatters.push(handler),
+        removeAll: removeAll,
+        setLoggerLevel: setLoggerLevel,
+        log: log,
+        forModule: buildLogger
+    },
+    buildLogger()
+);

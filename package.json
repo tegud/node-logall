@@ -1,23 +1,23 @@
 {
-  "name": "logall",
-  "version": "1.0.0",
-  "description": "Log all the things",
-  "main": "lib/index.js",
-  "scripts": {
-    "test": "npm run lint && npm run mocha",
-    "lint": "node_modules/.bin/eslint index.js lib/**/*.js",
-    "mocha": "node_modules/.bin/mocha --timeout 3000 ./test/**/*.js"
-  },
-  "author": "Steve Elliott",
-  "license": "ISC",
-  "devDependencies": {
-    "eslint": "^3.16.1",
-    "mocha": "^3.2.0",
-    "proxyquire": "^0.6.0",
-    "should": "^11.1.2"
-  },
-  "dependencies": {
-    "lodash": "^3.9.3",
-    "moment": "^2.6.0"
-  }
+    "name": "logall",
+    "version": "2.0.0",
+    "description": "Log all the things",
+    "main": "lib/index.js",
+    "scripts": {
+        "test": "npm run lint && npm run mocha",
+        "lint": "node_modules/.bin/eslint index.js lib/**/*.js",
+        "mocha": "node_modules/.bin/mocha --timeout 3000 ./test/**/*.js"
+    },
+    "author": "Steve Elliott",
+    "license": "ISC",
+    "devDependencies": {
+        "eslint": "^3.16.1",
+        "mocha": "^3.2.0",
+        "proxyquire": "^0.6.0",
+        "should": "^11.1.2"
+    },
+    "dependencies": {
+        "lodash": "^3.9.3",
+        "moment": "^2.6.0"
+    }
 }
