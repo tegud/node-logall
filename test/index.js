@@ -70,6 +70,12 @@ describe("logall", () => {
                 .then(() => Promise.resolve(loggedItems[0].level))
                 .should.eventually.eql("DEBUG"));
 
+        it("logs warn", () =>
+            registerLogger({ level: "WARN" }, FakeLogger)
+                .then(() => logging.logWarn("TEST MESSAGE"))
+                .then(() => Promise.resolve(loggedItems[0].level))
+                .should.eventually.eql("WARN"));
+
         it("logs error", () =>
             registerLogger({ level: "INFO" }, FakeLogger)
                 .then(() => logging.logError("TEST MESSAGE"))

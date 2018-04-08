@@ -1,12 +1,14 @@
 const DEBUG = "DEBUG";
 const INFO = "INFO";
+const WARN = "WARN";
 const ERROR = "ERROR";
 
 const availableLevels = {};
 
 availableLevels[DEBUG] = 0;
 availableLevels[INFO] = 1;
-availableLevels[ERROR] = 2;
+availableLevels[WARN] = 2;
+availableLevels[ERROR] = 3;
 
 let loggers = [
     CreateLogger({
