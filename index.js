@@ -72,7 +72,7 @@ function log(level, module, message, data) {
                     availableLevels[level] >=
                     availableLevels[getLoggerLevel(currentLogger, logObject)]
             )
-            .forEach(currentLogger => currentLogger.logger(logObject));
+            .forEach(currentLogger => currentLogger.logger.log(logObject));
 
         return Promise.resolve();
     });
@@ -109,6 +109,8 @@ function setLoggerLevel(logger, level) {
 }
 
 function removeAll() {
+    loggers.forEach(logger => logger.logger.stop());
+
     loggers = [];
     formatters = [];
 }

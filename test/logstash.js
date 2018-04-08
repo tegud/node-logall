@@ -2,7 +2,7 @@ const should = require("should");
 const proxyquire = require("proxyquire");
 const dgram = require("dgram");
 const net = require("net");
-const logstashLogger = proxyquire("../lib/logstash", {
+const LogstashLogger = proxyquire("../lib/logstash", {
     moment: () => ({
         format: () => formattedDateTime
     })
@@ -11,9 +11,15 @@ const moment = require("moment");
 let formattedDateTime;
 
 describe("Logstash Logger", () => {
+    let logger;
+
+    afterEach(() => {
+        logger.stop();
+    });
+
     describe("logs to udp", () => {
         it("formatted event is sent", done => {
-            const logger = new logstashLogger({
+            logger = new LogstashLogger({
                 output: {
                     transport: "udp",
                     host: "127.0.0.1",
@@ -23,9 +29,7 @@ describe("Logstash Logger", () => {
             });
 
             const udpClient = dgram.createSocket("udp4");
-
             udpClient.bind(9990);
-
             udpClient.on("message", msg => {
                 const data = msg.toString("utf-8");
                 const parsedData = JSON.parse(data);
@@ -41,13 +45,13 @@ describe("Logstash Logger", () => {
                 done();
             });
 
-            logger({ level: "INFO", message: "TEST MESSAGE" });
+            logger.log({ level: "INFO", message: "TEST MESSAGE" });
         });
     });
 
     describe("logs to tcp", () => {
         it("formatted event is sent", done => {
-            const logger = new logstashLogger({
+            logger = new LogstashLogger({
                 output: {
                     transport: "tcp",
                     host: "127.0.0.1",
@@ -80,7 +84,7 @@ describe("Logstash Logger", () => {
             server.listen(9991, "0.0.0.0", () => {});
 
             setTimeout(() => {
-                logger({ level: "INFO", message: "TEST MESSAGE" });
+                logger.log({ level: "INFO", message: "TEST MESSAGE" });
             }, 1000);
         });
     });
@@ -99,7 +103,7 @@ describe("Logstash Logger", () => {
         });
 
         it("type prefix is prepended to lower case level", done => {
-            const logger = new logstashLogger({
+            const logger = new LogstashLogger({
                 output: {
                     transport: "udp",
                     host: "127.0.0.1",
@@ -122,11 +126,11 @@ describe("Logstash Logger", () => {
                 done();
             });
 
-            logger({ level: "INFO", message: "TEST MESSAGE" });
+            logger.log({ level: "INFO", message: "TEST MESSAGE" });
         });
 
         it("sets level", done => {
-            const logger = new logstashLogger({
+            const logger = new LogstashLogger({
                 output: {
                     transport: "udp",
                     host: "127.0.0.1",
@@ -149,11 +153,11 @@ describe("Logstash Logger", () => {
                 done();
             });
 
-            logger({ level: "ERROR", message: "TEST MESSAGE" });
+            logger.log({ level: "ERROR", message: "TEST MESSAGE" });
         });
 
         it("sets level specific override", done => {
-            const logger = new logstashLogger({
+            const logger = new LogstashLogger({
                 output: {
                     transport: "udp",
                     host: "127.0.0.1",
@@ -179,11 +183,11 @@ describe("Logstash Logger", () => {
                 done();
             });
 
-            logger({ level: "ERROR", message: "TEST MESSAGE" });
+            logger.log({ level: "ERROR", message: "TEST MESSAGE" });
         });
 
         it("sets level property when type is string literal", done => {
-            const logger = new logstashLogger({
+            const logger = new LogstashLogger({
                 output: {
                     transport: "udp",
                     host: "127.0.0.1",
@@ -205,20 +209,19 @@ describe("Logstash Logger", () => {
                 done();
             });
 
-            logger({ level: "ERROR", message: "TEST MESSAGE" });
+            logger.log({ level: "ERROR", message: "TEST MESSAGE" });
         });
     });
 
     describe("json codec", () => {
         let udpClient;
-        let logger;
 
         beforeEach(() => {
             udpClient = dgram.createSocket("udp4");
 
             udpClient.bind(9990);
 
-            logger = new logstashLogger({
+            logger = new LogstashLogger({
                 output: {
                     transport: "udp",
                     host: "127.0.0.1",
@@ -251,7 +254,7 @@ describe("Logstash Logger", () => {
                 })
             );
 
-            logger({ level: "ERROR", module: "TEST MESSAGE" });
+            logger.log({ level: "ERROR", module: "TEST MESSAGE" });
         });
 
         it("sets @timestamp", done => {
@@ -266,7 +269,7 @@ describe("Logstash Logger", () => {
                 })
             );
 
-            logger({ level: "ERROR", message: "TEST MESSAGE" });
+            logger.log({ level: "ERROR", message: "TEST MESSAGE" });
         });
 
         it("sets message", done => {
@@ -277,7 +280,7 @@ describe("Logstash Logger", () => {
                 })
             );
 
-            logger({ level: "ERROR", message: "TEST MESSAGE" });
+            logger.log({ level: "ERROR", message: "TEST MESSAGE" });
         });
 
         it("sets module", done => {
@@ -288,7 +291,7 @@ describe("Logstash Logger", () => {
                 })
             );
 
-            logger({
+            logger.log({
                 level: "ERROR",
                 module: "TEST MODULE",
                 message: "TEST MESSAGE"
@@ -303,7 +306,11 @@ describe("Logstash Logger", () => {
                 })
             );
 
-            logger({ level: "ERROR", message: "TEST MESSAGE", data: { a: 1 } });
+            logger.log({
+                level: "ERROR",
+                message: "TEST MESSAGE",
+                data: { a: 1 }
+            });
         });
 
         describe("sets additionalProperties with keywords", () => {
@@ -315,7 +322,7 @@ describe("Logstash Logger", () => {
                     })
                 );
 
-                logger({
+                logger.log({
                     level: "ERROR",
                     message: "TEST MESSAGE",
                     data: { message: "1" }
@@ -330,7 +337,7 @@ describe("Logstash Logger", () => {
                     })
                 );
 
-                logger({
+                logger.log({
                     level: "ERROR",
                     message: "TEST MESSAGE",
                     data: { message: 1 }
@@ -349,7 +356,7 @@ describe("Logstash Logger", () => {
                     })
                 );
 
-                logger({
+                logger.log({
                     level: "ERROR",
                     message: "TEST MESSAGE",
                     data: { "@timestamp": "1" }
@@ -364,7 +371,7 @@ describe("Logstash Logger", () => {
                     })
                 );
 
-                logger({
+                logger.log({
                     level: "ERROR",
                     message: "TEST MESSAGE",
                     data: { "@timestamp": 1 }
@@ -375,14 +382,13 @@ describe("Logstash Logger", () => {
 
     describe("old logstash json codec", () => {
         let udpClient;
-        let logger;
 
         beforeEach(() => {
             udpClient = dgram.createSocket("udp4");
 
             udpClient.bind(9990);
 
-            logger = new logstashLogger({
+            logger = new LogstashLogger({
                 output: {
                     transport: "udp",
                     host: "127.0.0.1",
@@ -416,7 +422,7 @@ describe("Logstash Logger", () => {
                 })
             );
 
-            logger({ level: "ERROR", message: "TEST MESSAGE" });
+            logger.log({ level: "ERROR", message: "TEST MESSAGE" });
         });
 
         it("sets @timestamp", done => {
@@ -431,7 +437,7 @@ describe("Logstash Logger", () => {
                 })
             );
 
-            logger({ level: "ERROR", message: "TEST MESSAGE" });
+            logger.log({ level: "ERROR", message: "TEST MESSAGE" });
         });
 
         it("sets message", done => {
@@ -442,7 +448,7 @@ describe("Logstash Logger", () => {
                 })
             );
 
-            logger({ level: "ERROR", message: "TEST MESSAGE" });
+            logger.log({ level: "ERROR", message: "TEST MESSAGE" });
         });
 
         it("sets additionalProperties", done => {
@@ -453,7 +459,11 @@ describe("Logstash Logger", () => {
                 })
             );
 
-            logger({ level: "ERROR", message: "TEST MESSAGE", data: { a: 1 } });
+            logger.log({
+                level: "ERROR",
+                message: "TEST MESSAGE",
+                data: { a: 1 }
+            });
         });
     });
 });

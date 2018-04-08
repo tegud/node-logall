@@ -8,7 +8,10 @@ const moment = require("moment");
 let loggedItems = [];
 
 function FakeLogger() {
-    return log => loggedItems.push(log);
+    return {
+        log: log => loggedItems.push(log),
+        stop: () => Promise.resolve()
+    };
 }
 
 describe("logall", () => {

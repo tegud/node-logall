@@ -27,7 +27,7 @@ describe("Console Logger", () => {
     it("logs current time", () => {
         formatedDateString = "2015-07-02T11:28:30+01:00";
 
-        new consoleLogger()({ level: "INFO", message: "TEST MESSAGE" });
+        new consoleLogger().log({ level: "INFO", message: "TEST MESSAGE" });
 
         loggedMessage
             .substring(0, 27)
@@ -35,19 +35,19 @@ describe("Console Logger", () => {
     });
 
     it("logs level", () => {
-        new consoleLogger()({ level: "INFO", message: "TEST MESSAGE" });
+        new consoleLogger().log({ level: "INFO", message: "TEST MESSAGE" });
 
         loggedMessage.substring(0, 9).should.eql("[] [INFO]");
     });
 
     it("logs message", () => {
-        new consoleLogger()({ level: "INFO", message: "TEST MESSAGE" });
+        new consoleLogger().log({ level: "INFO", message: "TEST MESSAGE" });
 
         loggedMessage.should.eql("[] [INFO] TEST MESSAGE");
     });
 
     it("logs module if present", () => {
-        new consoleLogger()({
+        new consoleLogger().log({
             level: "INFO",
             module: "TEST MODULE",
             message: "TEST MESSAGE"
@@ -57,7 +57,7 @@ describe("Console Logger", () => {
     });
 
     it("logs data if present", () => {
-        new consoleLogger()({
+        new consoleLogger().log({
             level: "INFO",
             module: "TEST MODULE",
             message: "TEST MESSAGE",
